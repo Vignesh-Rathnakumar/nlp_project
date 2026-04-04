@@ -270,14 +270,14 @@ html, body, [class*="css"] {
 # Load models from Hugging Face
 @st.cache_resource
 def load_models():
-    # Classifier — manual load
+    # Classifier
     clf_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-bert")
-    clf_model = AutoModelForSequenceClassification.from_pretrained("vikirk/clickbait-bert")
+    clf_model     = AutoModelForSequenceClassification.from_pretrained("vikirk/clickbait-bert")
     clf_model.eval()
 
-    # Rewriter — BART based, no sentencepiece needed
-    rew_tokenizer = AutoTokenizer.from_pretrained("eugenesiow/bart-paraphrase")
-    rew_model = AutoModelForSeq2SeqLM.from_pretrained("eugenesiow/bart-paraphrase")
+    # Rewriter — this is the one we tested, it works
+    rew_tokenizer = AutoTokenizer.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
+    rew_model     = AutoModelForSeq2SeqLM.from_pretrained("humarin/chatgpt_paraphraser_on_T5_base")
     rew_model.eval()
 
     return (clf_tokenizer, clf_model), (rew_tokenizer, rew_model)
@@ -294,25 +294,24 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
+    input_text = f"paraphrase: {headline} </s>"
     inputs = rew_tokenizer(
-        headline,
-        return_tensors  = "pt",
-        truncation      = True,
-        max_length      = 128,
-        padding         = "max_length"
+        input_text,
+        return_tensors = "pt",
+        truncation     = True,
+        max_length     = 128,
+        padding        = "max_length"
     )
     with torch.no_grad():
         outputs = rew_model.generate(
             **inputs,
-            max_new_tokens       = 60,
+            max_length           = 64,
             num_beams            = 5,
             repetition_penalty   = 2.5,
             no_repeat_ngram_size = 2,
-            early_stopping       = True,
-            forced_bos_token_id  = rew_tokenizer.bos_token_id
+            early_stopping       = True
         )
-    result = rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return result
+    return rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # ── Session state ──
 if "history" not in st.session_state:
