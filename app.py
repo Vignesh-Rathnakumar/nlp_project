@@ -3,7 +3,8 @@ from transformers import (
     pipeline,
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
-    AutoModelForSequenceClassification
+    AutoModelForSequenceClassification,
+    T5Tokenizer
 )
 import torch
 
@@ -276,8 +277,12 @@ def load_models():
     clf_model = AutoModelForSequenceClassification.from_pretrained("vikirk/clickbait-bert")
     clf_model.eval()
 
-    # Rewriter — manual load
-    rew_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-t5", use_fast=False)
+    # Rewriter — use T5Tokenizer directly to bypass fast tokenizer bug
+    rew_tokenizer = T5Tokenizer.from_pretrained(
+        "vikirk/clickbait-t5",
+        legacy=True,
+        extra_ids=0
+    )
     rew_model = AutoModelForSeq2SeqLM.from_pretrained("vikirk/clickbait-t5")
     rew_model.eval()
 
