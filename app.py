@@ -279,11 +279,10 @@ def load_models():
 
     # Rewriter — use T5Tokenizer directly to bypass fast tokenizer bug
     rew_tokenizer = T5Tokenizer.from_pretrained(
-        "vikirk/clickbait-t5",
-        legacy=True,
-        extra_ids=0
+        "Vamsi/T5_Paraphrase_Paws",
+        legacy=True
     )
-    rew_model = AutoModelForSeq2SeqLM.from_pretrained("vikirk/clickbait-t5")
+    rew_model = AutoModelForSeq2SeqLM.from_pretrained("Vamsi/T5_Paraphrase_Paws")
     rew_model.eval()
 
     return (clf_tokenizer, clf_model), (rew_tokenizer, rew_model)
@@ -300,7 +299,8 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    inputs = rew_tokenizer(headline, return_tensors="pt", truncation=True, max_length=128)
+    input_text = f"paraphrase: {headline} </s>"
+    inputs = rew_tokenizer(input_text, return_tensors="pt", truncation=True, max_length=128)
     with torch.no_grad():
         outputs = rew_model.generate(
             **inputs,
