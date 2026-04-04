@@ -1,5 +1,11 @@
 import streamlit as st
-from transformers import pipeline
+from transformers import (
+    pipeline,
+    AutoTokenizer,
+    AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification
+)
+import torch
 
 st.set_page_config(
     page_title = "Clickbait Detector",
@@ -265,28 +271,39 @@ html, body, [class*="css"] {
 # Load models from Hugging Face
 @st.cache_resource
 def load_models():
-    classifier = pipeline(
-        "text-classification",
-        model="vikirk/clickbait-bert"
-    )
-    # Use the generic pipeline task that matches T5's actual config
-    rewriter = pipeline(
-        "summarization",        # ← try this if text2text-generation fails
-        model="vikirk/clickbait-t5"
-    )
-    return classifier, rewriter
+    # Classifier — manual load
+    clf_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-bert")
+    clf_model = AutoModelForSequenceClassification.from_pretrained("vikirk/clickbait-bert")
+    clf_model.eval()
 
-classifier, rewriter = load_models()
+    # Rewriter — manual load
+    rew_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-t5")
+    rew_model = AutoModelForSeq2SeqLM.from_pretrained("vikirk/clickbait-t5")
+    rew_model.eval()
+
+    return (clf_tokenizer, clf_model), (rew_tokenizer, rew_model)
+
+(clf_tokenizer, clf_model), (rew_tokenizer, rew_model) = load_models()
 
 def classify(headline):
-    result = classifier(headline)[0]
-    label = 1 if result["label"] == "LABEL_1" else 0
-    confidence = result["score"]
+    inputs = clf_tokenizer(headline, return_tensors="pt", truncation=True, max_length=128)
+    with torch.no_grad():
+        logits = clf_model(**inputs).logits
+    probs = torch.softmax(logits, dim=-1)[0]
+    label = int(torch.argmax(probs).item())
+    confidence = float(probs[label].item())
     return label, confidence
 
 def rewrite(headline):
-    result = rewriter(headline, max_length=50, min_length=10, do_sample=False)
-    return result[0]["summary_text"]   # or "generated_text" — see note below
+    inputs = rew_tokenizer(headline, return_tensors="pt", truncation=True, max_length=128)
+    with torch.no_grad():
+        outputs = rew_model.generate(
+            **inputs,
+            max_new_tokens=50,
+            num_beams=4,
+            early_stopping=True
+        )
+    return rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # ── Session state ──
 if "history" not in st.session_state:
