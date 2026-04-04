@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import pipeline
+from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 
 st.set_page_config(
     page_title = "Clickbait Detector",
@@ -269,15 +269,13 @@ def load_models():
         "text-classification",
         model="vikirk/clickbait-bert"
     )
-    
-    rewriter = pipeline(
-        "text-generation",
-        model="vikirk/clickbait-t5"
-    )
-    
-    return classifier, rewriter
 
-classifier, rewriter = load_models()
+    tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-t5")
+    model = AutoModelForSeq2SeqLM.from_pretrained("vikirk/clickbait-t5")
+
+    return classifier, tokenizer, model
+
+classifier, tokenizer, model = load_models()
 
 def classify(headline):
     result = classifier(headline)[0]
@@ -286,8 +284,9 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    result = rewriter(headline)[0]
-    return result["generated_text"]
+    inputs = tokenizer(headline, return_tensors="pt", max_length=512, truncation=True)
+    outputs = model.generate(**inputs, max_length=64, num_beams=5, repetition_penalty=2.5)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 # ── Session state ──
 if "history" not in st.session_state:

@@ -286,8 +286,10 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    result = rewriter(headline)[0]
-    return result["generated_text"]
+    inputs = tokenizer(headline, return_tensors="pt")
+    outputs = model.generate(**inputs, max_length=50)
+    rewritten = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return rewritten
 
 # ── Session state ──
 if "history" not in st.session_state:
