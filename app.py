@@ -294,22 +294,24 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    input_text = f"Write a neutral, factual version of this headline: {headline}"
-    inputs = rew_tokenizer(input_text, return_tensors="pt", truncation=True, max_length=128)
+    inputs = rew_tokenizer(
+        headline,
+        return_tensors  = "pt",
+        truncation      = True,
+        max_length      = 128,
+        padding         = "max_length"
+    )
     with torch.no_grad():
         outputs = rew_model.generate(
             **inputs,
-            max_new_tokens=60,
-            num_beams=5,
-            no_repeat_ngram_size=2,
-            early_stopping=True
+            max_new_tokens       = 60,
+            num_beams            = 5,
+            repetition_penalty   = 2.5,
+            no_repeat_ngram_size = 2,
+            early_stopping       = True,
+            forced_bos_token_id  = rew_tokenizer.bos_token_id
         )
     result = rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
-    
-    # Strip the prompt prefix if the model echoed it back
-    prefix = "Write a neutral, factual version of this headline: "
-    if result.startswith(prefix):
-        result = result[len(prefix):]
     return result
 
 # ── Session state ──
