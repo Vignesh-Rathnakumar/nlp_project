@@ -277,7 +277,7 @@ def load_models():
     clf_model.eval()
 
     # Rewriter — manual load
-    rew_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-t5")
+    rew_tokenizer = AutoTokenizer.from_pretrained("vikirk/clickbait-t5", use_fast=False)
     rew_model = AutoModelForSeq2SeqLM.from_pretrained("vikirk/clickbait-t5")
     rew_model.eval()
 
