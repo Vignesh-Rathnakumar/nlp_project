@@ -1,10 +1,8 @@
 import streamlit as st
 from transformers import (
-    pipeline,
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
-    AutoModelForSequenceClassification,
-    T5Tokenizer
+    AutoModelForSequenceClassification
 )
 import torch
 
@@ -277,12 +275,9 @@ def load_models():
     clf_model = AutoModelForSequenceClassification.from_pretrained("vikirk/clickbait-bert")
     clf_model.eval()
 
-    # Rewriter — use T5Tokenizer directly to bypass fast tokenizer bug
-    rew_tokenizer = T5Tokenizer.from_pretrained(
-        "Vamsi/T5_Paraphrase_Paws",
-        legacy=True
-    )
-    rew_model = AutoModelForSeq2SeqLM.from_pretrained("Vamsi/T5_Paraphrase_Paws")
+    # Rewriter — BART based, no sentencepiece needed
+    rew_tokenizer = AutoTokenizer.from_pretrained("eugenesiow/bart-paraphrase")
+    rew_model = AutoModelForSeq2SeqLM.from_pretrained("eugenesiow/bart-paraphrase")
     rew_model.eval()
 
     return (clf_tokenizer, clf_model), (rew_tokenizer, rew_model)
@@ -299,8 +294,7 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    input_text = f"paraphrase: {headline} </s>"
-    inputs = rew_tokenizer(input_text, return_tensors="pt", truncation=True, max_length=128)
+    inputs = rew_tokenizer(headline, return_tensors="pt", truncation=True, max_length=128)
     with torch.no_grad():
         outputs = rew_model.generate(
             **inputs,
