@@ -304,7 +304,13 @@ def rewrite(headline):
             no_repeat_ngram_size=2,
             early_stopping=True
         )
-    return rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
+    result = rew_tokenizer.decode(outputs[0], skip_special_tokens=True)
+    
+    # Strip the prompt prefix if the model echoed it back
+    prefix = "Write a neutral, factual version of this headline: "
+    if result.startswith(prefix):
+        result = result[len(prefix):]
+    return result
 
 # ── Session state ──
 if "history" not in st.session_state:
