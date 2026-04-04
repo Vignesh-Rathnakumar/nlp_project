@@ -269,12 +269,11 @@ def load_models():
         "text-classification",
         model="vikirk/clickbait-bert"
     )
-    
+    # Use the generic pipeline task that matches T5's actual config
     rewriter = pipeline(
-        "text2text-generation",
+        "summarization",        # ← try this if text2text-generation fails
         model="vikirk/clickbait-t5"
     )
-    
     return classifier, rewriter
 
 classifier, rewriter = load_models()
@@ -286,10 +285,8 @@ def classify(headline):
     return label, confidence
 
 def rewrite(headline):
-    inputs = tokenizer(headline, return_tensors="pt")
-    outputs = model.generate(**inputs, max_length=50)
-    rewritten = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return rewritten
+    result = rewriter(headline, max_length=50, min_length=10, do_sample=False)
+    return result[0]["summary_text"]   # or "generated_text" — see note below
 
 # ── Session state ──
 if "history" not in st.session_state:
