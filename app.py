@@ -467,7 +467,7 @@ st.markdown('''
     font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #f0c040;
+    color: #A855F7;
     opacity: 0.6;
 ">made by vignesh</div>
 ''', unsafe_allow_html=True)
