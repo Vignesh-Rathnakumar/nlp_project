@@ -456,3 +456,17 @@ if analyse:
                 <p class="model-pill-desc">Paraphrase model that neutralises sensationalist language into factual headlines.</p>
             </div>
         </div>''', unsafe_allow_html=True)
+        
+st.markdown('''
+<div style="
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    font-family: DM Mono, monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #f0c040;
+    opacity: 0.6;
+">made by vignesh</div>
+''', unsafe_allow_html=True)
