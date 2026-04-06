@@ -461,7 +461,8 @@ st.markdown('''
 <div style="
     position: fixed;
     bottom: 20px;
-    right: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     font-family: DM Mono, monospace;
     font-size: 11px;
     letter-spacing: 2px;
